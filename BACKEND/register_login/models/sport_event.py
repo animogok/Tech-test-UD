@@ -1,9 +1,10 @@
-import datetime
-from typing import List, Optional
-from pydantic import BaseModel, EmailStr, field_validator
+from re import T
+from typing import Annotated, List
+from fastapi import HTTPException
+from pydantic import BaseModel, EmailStr
 
 
-class Bets(BaseModel):
+class Bet(BaseModel):
     team_home_score_pred: int
     team_away_score_pred: int
     cash: float
@@ -11,8 +12,15 @@ class Bets(BaseModel):
     user_email: EmailStr
     event_id: int
 
+    class Config:
+        orm_mode = True
+
+
+# =================================== SPOR EVENTS CLASSES ====================#
+
 
 class SportEvent(BaseModel):
+    id: int
     event_name: str
     event_final_date: str
     event_type: str
@@ -20,16 +28,36 @@ class SportEvent(BaseModel):
     team_away: str
 
 
-class SportEventBets(SportEvent):
-    event_status: bool = False
-    bets: List[Bets]
-
-
 class UserSportEvent(SportEvent):
     user_email: EmailStr
+    event_status: bool
 
     class Config:
         orm_mode = True
+
+
+class SportEventBets(SportEvent):
+    bets: List[Bet]
+
+    class Config:
+        orm_mode = True
+
+    @classmethod
+    def from_orm(cls, obj):
+        return cls(
+            id=obj.id,
+            event_name=obj.event_name,
+            event_final_date=obj.event_final_date.strftime("%Y/%m/%d/%H/%M"),
+            event_type=obj.event_type,
+            team_home=obj.team_home,
+            team_away=obj.team_away,
+            bets=[
+                Bet.from_orm(bet) for bet in obj.bets
+            ],  # Convertir bets a instancias de Bet
+        )
+
+
+# ============================= FUNCTIONS RELATED TO THIS CLASSES =======================#
 
 
 def calculate_odd(home_team_score: int, away_team_score: int) -> float:

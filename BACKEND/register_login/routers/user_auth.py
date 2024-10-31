@@ -98,6 +98,7 @@ async def option_change_values(
     surname: Optional[str] = None,
     email: Optional[str] = None,
     password: Optional[str] = None,
+    wallet: Optional[float] = None,
 ):
     """
     Handle user information update.
@@ -117,12 +118,12 @@ async def option_change_values(
     """
     if current_user is not None:
         updated_user = update_user(
-            db=SessionLocal(),
             current_user=current_user,
             name=name,
             surname=surname,
             email=email,
             password=password,
+            wallet=wallet,
         )
         return {
             "msg": "User information updated successfully",
