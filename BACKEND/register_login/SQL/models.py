@@ -8,7 +8,8 @@ The model is used for creating, updating, and retrieving user data from the data
 """
 
 import datetime
-from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
 from SQL.engine import Base
 
 
@@ -32,9 +33,49 @@ class UserDb(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(20))
     surname = Column(String(20))
-    email = Column(String(50))
+    email = Column(String(50), unique=True, index=True)
     age = Column(Integer)
     wallet = Column(String(20))
     hashed_password = Column(String(50))
     date_joined = Column(DateTime, default=datetime.datetime.now())
     is_active = Column(Boolean, default=False)
+    # Relación con SportEvent
+    events = relationship(
+        "SportEvent", back_populates="user", cascade="all, delete-orphan"
+    )
+    # Relación con Bets
+    bets = relationship("Bets", back_populates="user", cascade="all, delete-orphan")
+
+
+class SportEvent(Base):
+    __tablename__ = "Sport_Event"
+    id = Column(Integer, primary_key=True)
+    event_name = Column(String(50))
+    event_final_date = Column(DateTime)
+    event_type = Column(String(100))
+    team_home = Column(String(50))
+    team_away = Column(String(50))
+    event_status = Column(Boolean, default=False)
+    # Clave foránea a UserDb
+    user_email = Column(String(50), ForeignKey("User.email", ondelete="CASCADE"))
+    # Relación con UserDb
+    user = relationship("UserDb", back_populates="events")
+    # Relación con Bets
+    bets = relationship("Bets", back_populates="event", cascade="all, delete-orphan")
+
+
+class Bets(Base):
+    __tablename__ = "Bet"
+    id = Column(Integer, primary_key=True)
+    odd = Column(Float)
+    team_home_score_pred = Column(Integer)
+    team_away_score_pred = Column(Integer)
+    cash = Column(Float)
+    # Clave foránea a UserDb
+    user_email = Column(String(50), ForeignKey("User.email", ondelete="CASCADE"))
+    # Clave foránea a SportEvent
+    sport_event_id = Column(Integer, ForeignKey("Sport_Event.id", ondelete="CASCADE"))
+    # Relación con UserDb
+    user = relationship("UserDb", back_populates="bets")
+    # Relación con SportEvent
+    event = relationship("SportEvent", back_populates="bets")

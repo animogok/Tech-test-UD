@@ -6,12 +6,15 @@ It utilizes FastAPI for creating APIs and JWT for token management.
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 import jwt
+from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from SQL.crud import get_user
 from SQL.engine import SessionLocal
 
-from .conf import ALGORITHM, SECRET_KEY, oauth2_scheme
+from .config import ALGORITHM, SECRET_KEY
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 class UserPublic(BaseModel):

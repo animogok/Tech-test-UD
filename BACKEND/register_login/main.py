@@ -9,6 +9,7 @@ Functions:
 
 from fastapi import FastAPI
 from routers.user_auth import authentication_user
+from routers.user_sport_event import sport_router
 from SQL import models
 from SQL.engine import SessionLocal, engine
 
@@ -35,6 +36,7 @@ app = FastAPI()
 
 # Include the authentication routes
 app.include_router(authentication_user)
+app.include_router(sport_router)
 
 
 @app.get("/")

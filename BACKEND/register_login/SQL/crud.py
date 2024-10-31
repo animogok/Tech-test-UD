@@ -11,11 +11,13 @@ Functions:
     post_user: Create a new user in the database.
 """
 
+import re
 from typing import Optional
 from sqlalchemy.orm import Session
-from .models import UserDb
+from .models import Bets, SportEvent, UserDb
+from SQL.engine import SessionLocal
 
-# ========================================== USER =============================================
+# ========================================== USER =============================================#
 
 
 def get_user(db: Session, user_email: str):
@@ -99,3 +101,101 @@ def post_user(db: Session, user_info: dict):
     db.commit()
     db.refresh(user_db)
     return user_db
+
+
+# =================================== SPORT EVENT =========================#
+
+
+def get_sport_event(event_id: int):
+    db = SessionLocal()
+    event = db.query(SportEvent).filter(SportEvent.id == event_id)
+    return event
+
+
+def get_all_sport_events() -> list[SportEvent]:
+    """
+    Retrieve all sport events from the database.
+
+    Args:
+        db (Session): Database session.
+
+    Returns:
+        list[SportEvent]: A list of all sport event objects.
+    """
+    db = SessionLocal()
+    return list(db.query(SportEvent).all())
+
+
+def post_sport_event(event_info: list, user_email: str):
+    db = SessionLocal()
+    event_db = SportEvent(
+        event_name=event_info[0],
+        event_final_date=event_info[1],
+        event_type=event_info[2],
+        team_home=event_info[3],
+        team_away=event_info[4],
+        user_email=user_email,
+    )
+    db.add(event_db)
+    db.commit()
+    db.refresh(event_db)
+    return event_db
+
+
+def update_sport_event(
+    event_id: int,
+    user_email: str,
+    event_name: Optional[str] = None,
+    event_type: Optional[str] = None,
+    team_home: Optional[str] = None,
+    team_away: Optional[str] = None,
+):
+    db = SessionLocal()
+
+    event_db = (
+        db.query(SportEvent)
+        .filter(SportEvent.id == event_id, SportEvent.user_email == user_email)
+        .first()
+    )
+    if not event_db:
+        return None
+
+    if event_name is not None:
+        event_db.event_name = event_name
+    if event_type is not None:
+        event_db.event_type = event_type
+    if team_home is not None:
+        event_db.team_home = team_home
+    if team_away is not None:
+        event_db.team_away = team_away
+
+    db.commit()
+    db.refresh(event_db)
+    return event_db
+
+
+def post_bet(bet_info: dict, odd: float) -> Bets:
+    """
+    Create a new bet in the database.
+
+    Args:
+        db (Session): Database session.
+        bet_info (dict): Dictionary containing bet information.
+
+    Returns:
+        Bets: The newly created bet object.
+    """
+    db = SessionLocal()
+
+    bet_db = Bets(
+        odd=bet_info.get("odd"),
+        team_home_score_pred=bet_info.get("team_home_score_pred"),
+        team_away_score_pred=bet_info.get("team_away_score_pred"),
+        cash=bet_info.get("cash"),
+        user_email=bet_info.get("user_email"),
+        sport_event_id=bet_info.get("event_id"),
+    )
+    db.add(bet_db)
+    db.commit()
+    db.refresh(bet_db)
+    return bet_db
